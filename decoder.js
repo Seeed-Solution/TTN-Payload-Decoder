@@ -154,6 +154,8 @@ function Decoder (bytes, port) {
                         channel: 1
                     });
                     break;
+                default:
+                    break;
             }
         } else {
             decoded.messages.push({
@@ -306,24 +308,11 @@ function ttnDataSpecialFormat (dataId, str) {
 
     // handle unsigned number
     var str2 = toBinary(strReverse);
-    if (str2.substring(0, 1) === "1") {
-        var arr = str2.split("");
-        var reverseArr = [];
-        for (var forArr = 0; forArr < arr.length; forArr++) {
-            var tmp154 = arr[forArr];
-            if (parseInt(tmp154) === 1) {
-                reverseArr.push(0);
-            } else {
-                reverseArr.push(1);
-            }
-        }
-        str2 = parseInt(reverseArr.join(""), 2) + 1;
-        str2 = str2.toString(2);
-    }
+
     var dataArray = [];
     switch (dataId) {
-        case 0:
-        case 1:
+        case 0: // DATA_BOARD_VERSION
+        case 1: // DATA_SENSOR_VERSION
             // Using point segmentation
             for (var k = 0; k < str2.length; k += 16) {
                 var tmp146 = str2.substring(k, k + 16);
