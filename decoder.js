@@ -356,7 +356,7 @@ function ttnDataFormat (str) {
             }
         }
         str2 = parseInt(reverseArr.join(""), 2) + 1;
-        return "-" + str2 / 1000;
+        return parseFloat("-" + str2 / 1000);
     }
     return parseInt(str2, 2) / 1000;
 }
