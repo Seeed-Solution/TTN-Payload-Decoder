@@ -16,6 +16,7 @@ We assume that you already setup your gateway and SenseCAP nodes correctly, and 
 - Please navigate to the `Payload Formats` tab of your application to which your SenseCAP nodes send data.
 - Select `Custom` for `Payload Format`
 - Copy and paste the whole contents of `decoder.js` to the `decoder` textarea.
+  > If you are using the latest version of TTN v3, you may encounter an error that exceeds the character limit. In this case, you will need to use `decoder_new-v3-uglifyjs.js` instead.
 - Click `save payload functions`
 
 ![image](https://user-images.githubusercontent.com/5130185/76605545-954c9c80-654b-11ea-984e-272c58492e85.png)
