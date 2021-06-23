@@ -1,0 +1,22 @@
+{
+  "name": "ttn-payload-decoder",
+  "version": "1.0.0",
+  "description": "TTN payload decoding script for SenseCAP LoRaWAN messages This script is used for decoding the LoRaWAN messages sent from the SenseCAP nodes. After decoding, users' applications will get more friendly and readable messages from TTN data API.",
+  "main": "uglifyjs_decoder_new-v3.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Seeed-Solution/TTN-Payload-Decoder.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Seeed-Solution/TTN-Payload-Decoder/issues"
+  },
+  "homepage": "https://github.com/Seeed-Solution/TTN-Payload-Decoder#readme",
+  "dependencies": {
+    "uglify-js": "^3.13.9"
+  }
+}
