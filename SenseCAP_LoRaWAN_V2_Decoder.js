@@ -1,21 +1,28 @@
 /**
  * Entry, decoder.js
  */
-function Decoder (bytes, port) {
+function decodeUplink (input, port) {
   // data split
+
+  var bytes = input['bytes']
+  // init
+  bytes = bytes2HexString(bytes)
+    .toLocaleUpperCase()
+  let result = {
+    'err': 0, 'payload': bytes, 'valid': true, messages: []
+  }
   let splitArray = dataSplit(bytes)
-  console.log('end data split >>>>>>>>>>>>>>>>', splitArray)
   // data decoder
-  let measurementResultArray = []
+  let decoderArray = []
   for (let i = 0; i < splitArray.length; i++) {
     let item = splitArray[i]
     let dataId = item.dataId
     let dataValue = item.dataValue
-    let measurementArray = dataIdAndDataValueJudge(dataId, dataValue)
-    measurementResultArray.push(measurementArray)
+    let messages = dataIdAndDataValueJudge(dataId, dataValue)
+    decoderArray.push(messages)
   }
-  console.log(`end data decode >>>>>>>>>>>>${JSON.stringify(measurementResultArray)}`)
-  return measurementResultArray
+  result.messages = decoderArray
+  return { data: result }
 }
 
 /**
@@ -89,7 +96,6 @@ function dataSplit (bytes) {
         break
       default:
         dataValue = '9'
-        console.log(`!!!!!!!!!!!!!!illegal data id`)
         break
     }
     if (dataValue.length < 2) {
@@ -101,7 +107,7 @@ function dataSplit (bytes) {
 }
 
 function dataIdAndDataValueJudge (dataId, dataValue) {
-  let measurementArray = []
+  let messages = []
   switch (dataId) {
     case '01':
       let temperature = dataValue.substring(0, 4)
@@ -109,34 +115,34 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
       let illumination = dataValue.substring(6, 14)
       let uv = dataValue.substring(14, 16)
       let windSpeed = dataValue.substring(16, 20)
-      measurementArray = [{
-        value: loraWANV2DataFormat(temperature, 10), measurementId: '4097'
+      messages = [{
+        measurementValue: loraWANV2DataFormat(temperature, 10), measurementId: '4097', type: 'Air Temperature'
       }, {
-        value: loraWANV2DataFormat(humidity), measurementId: '4098'
+        measurementValue: loraWANV2DataFormat(humidity), measurementId: '4098', type: 'Air Humidity'
       }, {
-        value: loraWANV2DataFormat(illumination), measurementId: '4099'
+        measurementValue: loraWANV2DataFormat(illumination), measurementId: '4099', type: 'Light Intensity'
       }, {
-        value: loraWANV2DataFormat(uv, 10), measurementId: '4190'
+        measurementValue: loraWANV2DataFormat(uv, 10), measurementId: '4190', type: 'UV Index'
       }, {
-        value: loraWANV2DataFormat(windSpeed, 10), measurementId: '4105'
+        measurementValue: loraWANV2DataFormat(windSpeed, 10), measurementId: '4105', type: 'Wind Speed'
       }]
       break
     case '02':
       let windDirection = dataValue.substring(0, 4)
       let rainfall = dataValue.substring(4, 12)
       let airPressure = dataValue.substring(12, 16)
-      measurementArray = [{
-        value: loraWANV2DataFormat(windDirection), measurementId: '4104'
+      messages = [{
+        measurementValue: loraWANV2DataFormat(windDirection), measurementId: '4104', type: 'Wind Speed Sensor'
       }, {
-        value: loraWANV2DataFormat(rainfall, 1000), measurementId: '4113'
+        measurementValue: loraWANV2DataFormat(rainfall, 1000), measurementId: '4113', type: 'RainFall Hourly'
       }, {
 
-        value: loraWANV2DataFormat(airPressure, 0.1), measurementId: '4101'
+        measurementValue: loraWANV2DataFormat(airPressure, 0.1), measurementId: '4101', type: 'Barometric Pressure'
       }]
       break
     case '03':
       let Electricity = dataValue
-      measurementArray = [{
+      messages = [{
         '3000': loraWANV2DataFormat(Electricity)
       }]
       break
@@ -146,7 +152,7 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
       let bdv = dataValue.substring(6, 10)
       let sensorAcquisitionInterval = dataValue.substring(10, 14)
       let gpsAcquisitionInterval = dataValue.substring(14, 18)
-      measurementArray = [{
+      messages = [{
         '3000': loraWANV2DataFormat(electricityWhether),
         '3001': `${loraWANV2DataFormat(hwv.substring(0, 2))}.${loraWANV2DataFormat(hwv.substring(2, 4))}`,
         '3502': `${loraWANV2DataFormat(bdv.substring(0, 2))}.${loraWANV2DataFormat(bdv.substring(2, 4))}`,
@@ -157,7 +163,7 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
     case '05':
       let sensorAcquisitionIntervalFive = dataValue.substring(0, 4)
       let gpsAcquisitionIntervalFive = dataValue.substring(4, 8)
-      measurementArray = [{
+      messages = [{
         '3900': parseInt(loraWANV2DataFormat(sensorAcquisitionIntervalFive)) * 60,
         '3911': parseInt(loraWANV2DataFormat(gpsAcquisitionIntervalFive)) * 60
       }]
@@ -239,63 +245,61 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
           descZh = 'CC_OTHER_FAILED'
           break
       }
-      measurementArray = [{
+      messages = [{
         measurementId: '4101', type: 'sensor_error_event', errCode: errorCode, descZh
       }]
       break
     case '10':
       let statusValue = dataValue.substring(0, 2)
-      let { channel, status, type } = loraWANV2BitDataFormat(statusValue)
+      let { status, type } = loraWANV2BitDataFormat(statusValue)
       let sensecapId = dataValue.substring(2)
-      measurementArray = [{
-        channel: channel, status: status, channelType: type, sensorEui: sensecapId
+      messages = [{
+        status: status, channelType: type, sensorEui: sensecapId
       }]
       break
     case '20':
-      let initMeasurementId = 4175
+      let initmeasurementId = 4175
       let sensor = []
       for (let i = 0; i < dataValue.length; i += 4) {
         let modelId = loraWANV2DataFormat(dataValue.substring(i, i + 2))
         let detectionType = loraWANV2DataFormat(dataValue.substring(i + 2, i + 4))
         let aiHeadValues = `${modelId}.${detectionType}`
         sensor.push({
-
-          value: aiHeadValues, measurementId: initMeasurementId
+          measurementValue: aiHeadValues, measurementId: initmeasurementId
         })
-        initMeasurementId++
+        initmeasurementId++
       }
-      measurementArray = sensor
+      messages = sensor
       break
     case '21':
       // Vision AI:
       // AI 识别输出帧
       let tailValueArray = []
-      let initTailMeasurementId = 4180
+      let initTailmeasurementId = 4180
       for (let i = 0; i < dataValue.length; i += 4) {
         let modelId = loraWANV2DataFormat(dataValue.substring(i, i + 2))
         let detectionType = loraWANV2DataFormat(dataValue.substring(i + 2, i + 4))
         let aiTailValues = `${modelId}.${detectionType}`
         tailValueArray.push({
-
-          value: aiTailValues, measurementId: initTailMeasurementId
+          measurementValue: aiTailValues, measurementId: initTailmeasurementId, type: `AI Detection ${i}`
         })
-        initTailMeasurementId++
+        initTailmeasurementId++
       }
-      measurementArray = tailValueArray
+      messages = tailValueArray
       break
     case '30':
     case '31':
       // 首帧或者首帧输出帧
       let channelInfoOne = loraWANV2ChannelBitFormat(dataValue.substring(0, 2))
-      let dataInfoOne = loraWANV2DataLogBitFormat(dataValue.substring(2, 4))
       let dataOne = {
-
-        value: loraWANV2DataFormat(dataValue.substring(4, 12), 1000), measurementId: 4164 + parseInt(channelInfoOne.one)
+        measurementValue: loraWANV2DataFormat(dataValue.substring(4, 12), 1000),
+        measurementId: parseInt(channelInfoOne.one),
+        type: 'Measurement'
       }
       let dataTwo = {
-
-        value: loraWANV2DataFormat(dataValue.substring(12, 20), 1000),
-        measurementId: 4164 + parseInt(channelInfoOne.two)
+        measurementValue: loraWANV2DataFormat(dataValue.substring(12, 20), 1000),
+        measurementId: parseInt(channelInfoOne.two),
+        type: 'Measurement'
       }
       let cacheArrayInfo = []
       if (parseInt(channelInfoOne.one)) {
@@ -304,52 +308,47 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
       if (parseInt(channelInfoOne.two)) {
         cacheArrayInfo.push(dataTwo)
       }
-      let isTHObjOne = {
-        value: dataInfoOne.isTH, measurementId: 4194
-      }
       cacheArrayInfo.forEach(item => {
-        measurementArray.push(item)
+        messages.push(item)
       })
-      measurementArray.push(isTHObjOne)
       break
     case '32':
       let channelInfoTwo = loraWANV2ChannelBitFormat(dataValue.substring(0, 2))
       let dataThree = {
-        value: loraWANV2DataFormat(dataValue.substring(2, 10), 1000),
+        measurementValue: loraWANV2DataFormat(dataValue.substring(2, 10), 1000),
         measurementId: 4164 + parseInt(channelInfoTwo.one),
+        type: 'Measurement'
       }
       let dataFour = {
-        value: loraWANV2DataFormat(dataValue.substring(10, 18), 1000),
-        measurementId: 4164 + parseInt(channelInfoTwo.two)
+        measurementValue: loraWANV2DataFormat(dataValue.substring(10, 18), 1000),
+        measurementId: 4164 + parseInt(channelInfoTwo.two),
+        type: 'Measurement'
       }
       if (parseInt(channelInfoTwo.one)) {
-        measurementArray.push(dataThree)
+        messages.push(dataThree)
       }
       if (parseInt(channelInfoTwo.two)) {
-        measurementArray.push(dataFour)
+        messages.push(dataFour)
       }
       break
     case '33':
       let channelInfoThree = loraWANV2ChannelBitFormat(dataValue.substring(0, 2))
-      let dataInfoThree = loraWANV2DataLogBitFormat(dataValue.substring(2, 4))
-      let isTHObjTwo = {
-        channel: channelInfoThree.two, value: dataInfoThree.isTH, measurementId: 4194
-      }
       let dataFive = {
-        value: loraWANV2DataFormat(dataValue.substring(4, 12), 1000),
-        measurementId: 4164 + parseInt(channelInfoThree.one)
+        measurementValue: loraWANV2DataFormat(dataValue.substring(4, 12), 1000),
+        measurementId: parseInt(channelInfoThree.one),
+        type: 'Measurement'
       }
       let dataSix = {
-        value: loraWANV2DataFormat(dataValue.substring(12, 20), 1000),
-        measurementId: 4164 + parseInt(channelInfoThree.two)
+        measurementValue: loraWANV2DataFormat(dataValue.substring(12, 20), 1000),
+        measurementId: parseInt(channelInfoThree.two),
+        type: 'Measurement'
       }
       if (parseInt(channelInfoThree.one)) {
-        measurementArray.push(dataFive)
+        messages.push(dataFive)
       }
       if (parseInt(channelInfoThree.two)) {
-        measurementArray.push(dataSix)
+        messages.push(dataSix)
       }
-      measurementArray.push(isTHObjTwo)
 
       break
     case '34':
@@ -357,7 +356,7 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
       let GPIOInput = loraWANV2DataFormat(dataValue.substring(2, 4))
       let simulationModel = loraWANV2DataFormat(dataValue.substring(4, 6))
       let simulationInterface = loraWANV2DataFormat(dataValue.substring(6, 8))
-      measurementArray = [{
+      messages = [{
         dataId: 34, '3570': model, '3571': GPIOInput, '3572': simulationModel, '3573': simulationInterface
       }]
       break
@@ -366,7 +365,7 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
       let channelTDOne = loraWANV2ChannelBitFormat(dataValue.substring(0, 2))
       let channelSortTDOne = 3920 + (parseInt(channelTDOne.one) - 1) * 2
       let channelSortTDTWO = 3921 + (parseInt(channelTDOne.one) - 1) * 2
-      measurementArray = [{
+      messages = [{
         [channelSortTDOne]: loraWANV2DataFormat(dataValue.substring(2, 10), 1000),
         [channelSortTDTWO]: loraWANV2DataFormat(dataValue.substring(10, 18), 1000)
       }]
@@ -375,7 +374,7 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
       let channelTDInfoTwo = loraWANV2ChannelBitFormat(dataValue.substring(0, 2))
       let channelSortOne = 3920 + (parseInt(channelTDInfoTwo.one) - 1) * 2
       let channelSortTWO = 3921 + (parseInt(channelTDInfoTwo.one) - 1) * 2
-      measurementArray = [{
+      messages = [{
         [channelSortOne]: loraWANV2DataFormat(dataValue.substring(2, 10), 1000),
         [channelSortTWO]: loraWANV2DataFormat(dataValue.substring(10, 18), 1000)
       }]
@@ -384,7 +383,7 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
       let channelTDInfoThree = loraWANV2ChannelBitFormat(dataValue.substring(0, 2))
       let channelSortThreeOne = 3920 + (parseInt(channelTDInfoThree.one) - 1) * 2
       let channelSortThreeTWO = 3921 + (parseInt(channelTDInfoThree.one) - 1) * 2
-      measurementArray = [{
+      messages = [{
         [channelSortThreeOne]: loraWANV2DataFormat(dataValue.substring(2, 10), 1000),
         [channelSortThreeTWO]: loraWANV2DataFormat(dataValue.substring(10, 18), 1000)
       }]
@@ -395,7 +394,7 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
       let bdvTD = dataValue.substring(6, 10)
       let sensorAcquisitionIntervalTD = dataValue.substring(10, 14)
       let gpsAcquisitionIntervalTD = dataValue.substring(14, 18)
-      measurementArray = [{
+      messages = [{
         dataId: parseInt(dataId),
         '3000': loraWANV2DataFormat(electricityWhetherTD),
         '3001': `${loraWANV2DataFormat(hwvTD.substring(0, 2))}.${loraWANV2DataFormat(hwvTD.substring(2, 4))}`,
@@ -414,20 +413,19 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
       let accelerateY = dataValue.substring(12, 16)
       // Z
       let accelerateZ = dataValue.substring(16, 20)
-      measurementArray = [{
-        value: loraWANV2DataFormat(lightIntensity), measurementId: '4193'
+      messages = [{
+        measurementValue: loraWANV2DataFormat(lightIntensity), measurementId: '4193', type: 'Light Intensity'
+      }, {
+        measurementValue: loraWANV2DataFormat(loudness), measurementId: '4192', type: 'Sound Intensity'
       }, {
 
-        value: loraWANV2DataFormat(loudness), measurementId: '4192'
+        measurementValue: loraWANV2DataFormat(accelerateX, 100), measurementId: '4150', type: 'AccelerometerX'
       }, {
 
-        value: loraWANV2DataFormat(accelerateX, 100), measurementId: '4150'
+        measurementValue: loraWANV2DataFormat(accelerateY, 100), measurementId: '4151', type: 'AccelerometerY'
       }, {
 
-        value: loraWANV2DataFormat(accelerateY, 100), measurementId: '4151'
-      }, {
-
-        value: loraWANV2DataFormat(accelerateZ, 100), measurementId: '4152'
+        measurementValue: loraWANV2DataFormat(accelerateZ, 100), measurementId: '4152', type: 'AccelerometerZ'
       }]
       break
     case '42':
@@ -436,50 +434,49 @@ function dataIdAndDataValueJudge (dataId, dataValue) {
       let tVOC = dataValue.substring(8, 12)
       let CO2eq = dataValue.substring(12, 16)
       let soilMoisture = dataValue.substring(16, 20)
-      measurementArray = [{
-        value: loraWANV2DataFormat(airTemperature, 100), measurementId: '4097'
+      messages = [{
+        measurementValue: loraWANV2DataFormat(airTemperature, 100), measurementId: '4097', type: 'Air Temperature'
       }, {
-        value: loraWANV2DataFormat(AirHumidity, 100), measurementId: '4098'
+        measurementValue: loraWANV2DataFormat(AirHumidity, 100), measurementId: '4098', type: 'Air Humidity'
       }, {
-        value: loraWANV2DataFormat(tVOC), measurementId: '4195'
+        measurementValue: loraWANV2DataFormat(tVOC), measurementId: '4195', type: 'Total Volatile Organic Compounds'
       }, {
-        value: loraWANV2DataFormat(CO2eq), measurementId: '4100'
+        measurementValue: loraWANV2DataFormat(CO2eq), measurementId: '4100', type: 'CO2'
       }, {
-        value: loraWANV2DataFormat(soilMoisture), measurementId: '4103'
+        measurementValue: loraWANV2DataFormat(soilMoisture), measurementId: '4196', type: 'Soil moisture intensity'
       }]
       break
     case '43':
     case '44':
       let headerDevKitValueArray = []
-      let initDevkitMeasurementId = 4175
+      let initDevkitmeasurementId = 4175
       for (let i = 0; i < dataValue.length; i += 4) {
         let modelId = loraWANV2DataFormat(dataValue.substring(i, i + 2))
         let detectionType = loraWANV2DataFormat(dataValue.substring(i + 2, i + 4))
         let aiHeadValues = `${modelId}.${detectionType}`
         headerDevKitValueArray.push({
-          value: aiHeadValues, measurementId: initDevkitMeasurementId,
+          measurementValue: aiHeadValues, measurementId: initDevkitmeasurementId, type: `AI Detection ${i}`
         })
-        initDevkitMeasurementId++
+        initDevkitmeasurementId++
       }
-      measurementArray = headerDevKitValueArray
+      messages = headerDevKitValueArray
       break
     case '45':
-      let initTailDevKitMeasurementId = 4180
+      let initTailDevKitmeasurementId = 4180
       for (let i = 0; i < dataValue.length; i += 4) {
         let modelId = loraWANV2DataFormat(dataValue.substring(i, i + 2))
         let detectionType = loraWANV2DataFormat(dataValue.substring(i + 2, i + 4))
         let aiTailValues = `${modelId}.${detectionType}`
-        measurementArray.push({
-          value: aiTailValues, measurementId: initTailDevKitMeasurementId,
+        messages.push({
+          measurementValue: aiTailValues, measurementId: initTailDevKitmeasurementId, type: `AI Detection ${i}`
         })
-        initTailDevKitMeasurementId++
+        initTailDevKitmeasurementId++
       }
       break
     default:
-      console.log('>>>>>>>>>>>>>>>>>>illegal request')
       break
   }
-  return measurementArray
+  return messages
 }
 
 /**
@@ -588,4 +585,22 @@ function loraWANV2DataLogBitFormat (str) {
     isTH: isTH, total: total, left: left
   }
   return resultInfo
+}
+
+function bytes2HexString (arrBytes) {
+  var str = ''
+  for (var i = 0; i < arrBytes.length; i++) {
+    var tmp
+    var num = arrBytes[i]
+    if (num < 0) {
+      tmp = (255 + num + 1).toString(16)
+    } else {
+      tmp = num.toString(16)
+    }
+    if (tmp.length === 1) {
+      tmp = '0' + tmp
+    }
+    str += tmp
+  }
+  return str
 }
