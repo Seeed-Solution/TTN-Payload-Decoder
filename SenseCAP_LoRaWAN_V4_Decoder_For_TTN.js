@@ -143,7 +143,7 @@ function deserialize (dataId, dataValue) {
                 {measurementId: '4197', type: 'Longitude', measurementValue: getSensorValue(dataValue.substring(16, 24), 1000000)},
                 {measurementId: '4198', type: 'Latitude', measurementValue: getSensorValue(dataValue.substring(24, 32), 1000000)},
                 {measurementId: '4097', type: 'Air Temperature', measurementValue: getSensorValue(dataValue.substring(32, 36), 10)},
-                {measurementId: '4199', type: 'Light Intensity', measurementValue: getSensorValue(dataValue.substring(36, 40))},
+                {measurementId: '4199', type: 'Light', measurementValue: getSensorValue(dataValue.substring(36, 40))},
                 {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(40, 42))}
             ]
             break
