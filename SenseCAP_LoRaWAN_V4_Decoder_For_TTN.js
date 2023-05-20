@@ -432,9 +432,9 @@ function getEventStatus (str) {
     let event = []
     for (let i = bitStr.length; i >= 0; i--) {
         if (i === 0) {
-            event[i] = bitStr.substring(0) === '1'
+            event[i] = bitStr.substring(0)
         } else {
-            event[i] = bitStr.substring(i - 1, i) === '1'
+            event[i] = bitStr.substring(i - 1, i)
         }
     }
     return event.reverse()
