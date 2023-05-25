@@ -186,6 +186,7 @@ function unpack (messageValue) {
 function deserialize (dataId, dataValue) {
     let measurementArray = []
     let eventList = []
+    let collectTime = 0
     switch (dataId) {
         case '01':
             measurementArray = getUpShortInfo(dataValue)
@@ -197,73 +198,121 @@ function deserialize (dataId, dataValue) {
             break
         case '04':
             measurementArray = [
-                {measurementId: '3940', type: 'Heartbeat Interval', measurementValue: getOneWeekInterval(dataValue.substring(4, 8))},
-                {measurementId: '3900', type: 'Uplink Interval', measurementValue: getOneWeekInterval(dataValue.substring(8, 12))},
+                {measurementId: '3940', type: 'Work Mode', measurementValue: getWorkingMode(dataValue.substring(0, 2))},
+                {measurementId: '3942', type: 'Heartbeat Interval', measurementValue: getOneWeekInterval(dataValue.substring(4, 8))},
+                {measurementId: '3943', type: 'Periodic Interval', measurementValue: getOneWeekInterval(dataValue.substring(8, 12))},
+                {measurementId: '3944', type: 'Event Interval', measurementValue: getOneWeekInterval(dataValue.substring(12, 16))},
                 {measurementId: '3941', type: 'SOS Mode', measurementValue: getSOSMode(dataValue.substring(16, 18))}
             ]
             break;
         case '05':
             measurementArray = [
                 {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(0, 2))},
+                {measurementId: '3940', type: 'Work Mode', measurementValue: getWorkingMode(dataValue.substring(2, 4))},
                 {measurementId: '3941', type: 'SOS Mode', measurementValue: getSOSMode(dataValue.substring(6, 8))}
             ]
             break
         case '06':
             eventList = this.getEventStatus(dataValue.substring(0, 6))
+            collectTime = this.getUTCTimestamp(dataValue.substring(8, 16))
             measurementArray = [
                 {measurementId: '4200', type: 'SOS Event', measurementValue: eventList[6]},
                 {measurementId: '4197', type: 'Longitude', measurementValue: getSensorValue(dataValue.substring(16, 24), 1000000)},
                 {measurementId: '4198', type: 'Latitude', measurementValue: getSensorValue(dataValue.substring(24, 32), 1000000)},
                 {measurementId: '4097', type: 'Air Temperature', measurementValue: getSensorValue(dataValue.substring(32, 36), 10)},
                 {measurementId: '4199', type: 'Light', measurementValue: getSensorValue(dataValue.substring(36, 40))},
-                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(40, 42))}
+                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(40, 42))},
+                {type: 'Timestamp', measurementValue: collectTime}
             ]
             break
         case '07':
             eventList = this.getEventStatus(dataValue.substring(0, 6))
+            collectTime = this.getUTCTimestamp(dataValue.substring(8, 16))
             measurementArray = [
                 {measurementId: '4200', type: 'SOS Event', measurementValue: eventList[6]},
                 {measurementId: '5001', type: 'Wi-Fi Scan', measurementValue: getMacAndRssiObj(dataValue.substring(16, 72))},
                 {measurementId: '4097', type: 'Air Temperature', measurementValue: getSensorValue(dataValue.substring(72, 76), 10)},
                 {measurementId: '4199', type: 'Light', measurementValue: getSensorValue(dataValue.substring(76, 80))},
-                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(80, 82))}
+                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(80, 82))},
+                {type: 'Timestamp', measurementValue: collectTime}
             ]
             break
         case '08':
             eventList = this.getEventStatus(dataValue.substring(0, 6))
+            collectTime = this.getUTCTimestamp(dataValue.substring(8, 16))
             measurementArray = [
                 {measurementId: '4200', type: 'SOS Event', measurementValue: eventList[6]},
                 {measurementId: '5002', type: 'BLE Scan', measurementValue: getMacAndRssiObj(dataValue.substring(16, 58))},
                 {measurementId: '4097', type: 'Air Temperature', measurementValue: getSensorValue(dataValue.substring(58, 62), 10)},
                 {measurementId: '4199', type: 'Light', measurementValue: getSensorValue(dataValue.substring(62, 66))},
-                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(66, 68))}
+                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(66, 68))},
+                {type: 'Timestamp', measurementValue: collectTime}
             ]
             break
         case '09':
             eventList = this.getEventStatus(dataValue.substring(0, 6))
+            collectTime = this.getUTCTimestamp(dataValue.substring(8, 16))
             measurementArray = [
                 {measurementId: '4200', type: 'SOS Event', measurementValue: eventList[6]},
                 {measurementId: '4197', type: 'Longitude', measurementValue: getSensorValue(dataValue.substring(16, 24), 1000000)},
                 {measurementId: '4198', type: 'Latitude', measurementValue: getSensorValue(dataValue.substring(24, 32), 1000000)},
-                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(32, 34))}
+                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(32, 34))},
+                {type: 'Timestamp', measurementValue: collectTime}
             ]
             break
         case '0A':
             eventList = this.getEventStatus(dataValue.substring(0, 6))
+            collectTime = this.getUTCTimestamp(dataValue.substring(8, 16))
             measurementArray = [
                 {measurementId: '4200', type: 'SOS Event', measurementValue: eventList[6]},
                 {measurementId: '5001', type: 'Wi-Fi Scan', measurementValue: getMacAndRssiObj(dataValue.substring(16, 72))},
-                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(72, 74))}
+                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(72, 74))},
+                {type: 'Timestamp', measurementValue: collectTime}
             ]
             break
         case '0B':
             eventList = this.getEventStatus(dataValue.substring(0, 6))
+            collectTime = this.getUTCTimestamp(dataValue.substring(8, 16))
             measurementArray = [
                 {measurementId: '4200', type: 'SOS Event', measurementValue: eventList[6]},
                 {measurementId: '5002', type: 'BLE Scan', measurementValue: getMacAndRssiObj(dataValue.substring(16, 58))},
-                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(58, 60))}
+                {measurementId: '3000', type: 'Battery', measurementValue: getBattery(dataValue.substring(58, 60))},
+                {type: 'Timestamp', measurementValue: collectTime}
             ]
             break
+        case '0D':
+            let errorCode = this.getInt(dataValue)
+            let error = ''
+            switch (errorCode) {
+                case 0:
+                    error = 'THE GNSS SCAN TIME OUT'
+                    break
+                case 1:
+                    error = 'THE WI-FI SCAN TIME OUT'
+                    break
+                case 2:
+                    error = 'THE WI-FI+GNSS SCAN TIME OUT'
+                    break
+                case 3:
+                    error = 'THE GNSS+WI-FI SCAN TIME OUT'
+                    break
+                case 4:
+                    error = 'THE BEACON SCAN TIME OUT'
+                    break
+                case 5:
+                    error = 'THE BEACON+WI-FI SCAN TIME OUT'
+                    break
+                case 6:
+                    error = 'THE BEACON+GNSS SCAN TIME OUT'
+                    break
+                case 7:
+                    error = 'THE BEACON+WI-FI+GNSS SCAN TIME OUT'
+                    break
+                case 8:
+                    error = 'FAILED TO OBTAIN THE UTC TIMESTAMP'
+                    break
+            }
+            measurementArray.push({errorCode, error})
     }
     return measurementArray
 }
@@ -272,20 +321,19 @@ function getUpShortInfo (messageValue) {
     return [
         {
             measurementId: '3000', type: 'Battery', measurementValue: getBattery(messageValue.substring(0, 2))
-        },
-        {
+        }, {
             measurementId: '3502', type: 'Firmware Version', measurementValue: getSoftVersion(messageValue.substring(2, 6))
-        },
-        {
+        }, {
             measurementId: '3001', type: 'Hardware Version', measurementValue: getHardVersion(messageValue.substring(6, 10))
-        },
-        {
-            measurementId: '3940', type: 'Heartbeat Interval', measurementValue: getOneWeekInterval(messageValue.substring(14, 18))
-        },
-        {
-            measurementId: '3911', type: 'Uplink Interval', measurementValue: getOneWeekInterval(messageValue.substring(18, 22))
-        },
-        {
+        }, {
+            measurementId: '3940', type: 'Work Mode', measurementValue: getWorkingMode(messageValue.substring(10, 12))
+        }, {
+            measurementId: '3942', type: 'Heartbeat Interval', measurementValue: getOneWeekInterval(messageValue.substring(14, 18))
+        }, {
+            measurementId: '3943', type: 'Periodic Interval', measurementValue: getOneWeekInterval(messageValue.substring(18, 22))
+        }, {
+            measurementId: '3944', type: 'Event Interval', measurementValue: getOneWeekInterval(messageValue.substring(22, 26))
+        }, {
             measurementId: '3941', type: 'SOS Mode', measurementValue: getSOSMode(messageValue.substring(28, 30))
         }
     ]
@@ -410,11 +458,11 @@ function getMacAddress (str) {
 }
 
 function getInt8RSSI (str) {
-    return getInt(str)
+    return this.loraWANV2DataFormat(str)
 }
 
 function getInt (str) {
-    return loraWANV2DataFormat(str)
+    return parseInt(str)
 }
 
 /**
@@ -446,4 +494,18 @@ function getByteArray (str) {
         bytes.push(str.substring(i, i + 2))
     }
     return toBinary(bytes)
+}
+
+function getWorkingMode (workingMode) {
+    return getInt(workingMode)
+}
+
+function getUTCTimestamp(str){
+    return parseInt(this.loraWANV2PositiveDataFormat(str)) * 1000
+}
+
+function loraWANV2PositiveDataFormat (str, divisor = 1) {
+    let strReverse = this.bigEndianTransform(str)
+    let str2 = this.toBinary(strReverse)
+    return parseInt(str2, 2) / divisor
 }
